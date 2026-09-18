@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fix the Revenue Problem</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');A
     :root { --ink:#000; --paper:#fff; --green:#228b22; --violet:#4b1f6f; }
     * { box-sizing:border-box; }
     body { margin:0; min-height:100vh; display:grid; place-items:center; background:#f4f0e8; background-image:radial-gradient(rgba(0,0,0,.08) .7px,transparent .7px); background-size:8px 8px; color:var(--ink); font-family:'Montserrat',Arial,sans-serif; }
@@ -36,8 +36,52 @@
     .intro p { margin:0 auto 22px; max-width:560px; font-size:clamp(16px,2.5vw,24px); font-weight:700; line-height:1.45; }
     .high-contrast .stage { filter:contrast(1.35); }
     .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-    @media (max-width:480px) { .hud { top:8px; gap:4px; font-size:9px; letter-spacing:.02em; } .pill { padding:5px 6px; } .controls { font-size:10px; padding:9px 10px; } .controls button { padding:6px 7px; font-size:10px; } .tag { display:none; } }
-    @media (max-width:650px) { .controls { flex-direction:column; align-items:center; } .controls > div:first-child { width:100%; line-height:1.6; text-align:center; } .touch { display:grid; grid-template-columns:repeat(3,34px); grid-template-rows:repeat(2,30px); align-self:center; } }
+    @media (max-width:650px) {
+      body { display:block; min-height:100dvh; }
+      .wrap { width:100%; padding:8px; }
+      .frame { border-radius:12px; box-shadow:5px 5px 0 rgba(0,0,0,.18); }
+      header { flex-wrap:wrap; padding:10px 12px; gap:4px; }
+      h1 { width:100%; font-size:18px; }
+      .tag { display:none; }
+      .hud { top:8px; left:8px; right:8px; gap:4px; font-size:8px; letter-spacing:.02em; }
+      .pill { padding:4px 5px; }
+      .dialogue, .intro {
+        top:8px;
+        left:8px;
+        right:8px;
+        bottom:8px;
+        padding:10px;
+        overflow-y:auto;
+        overscroll-behavior:contain;
+      }
+      .intro-card { max-width:none; padding:8px; }
+      .intro h2 { margin-bottom:10px; font-size:clamp(24px, 9vw, 40px); }
+      .intro p, .line { font-size:14px; line-height:1.3; }
+      .intro p { margin-bottom:12px; }
+      .speaker { font-size:10px; }
+      .choices { flex-direction:column; gap:7px; margin-top:8px; }
+      .choices button { width:100%; min-height:42px; }
+      .controls {
+        flex-direction:column;
+        align-items:stretch;
+        gap:10px;
+        padding:10px;
+        font-size:10px;
+        line-height:1.5;
+        text-align:center;
+      }
+      .controls > div:first-child { width:100%; }
+      .controls button { margin:3px 1px; padding:7px 8px; font-size:10px; min-height:38px; }
+      .touch { display:grid; grid-template-columns:repeat(3,44px); grid-template-rows:repeat(2,44px); gap:6px; align-self:center; }
+      .touch button { width:44px; height:44px; padding:0; font-size:16px; }
+      .touch .interact { grid-column:1 / -1; width:100%; min-height:42px; }
+    }
+    @media (max-width:380px) {
+      .hud { position:static; padding:6px 8px 0; background:#fff; }
+      .intro h2 { font-size:25px; }
+      .intro p, .line { font-size:13px; }
+      .controls { font-size:9px; }
+    }
   </style>
 </head>
 <body>
@@ -55,7 +99,7 @@
           <div class="speaker" id="speaker"></div><div class="line" id="line" aria-live="polite"></div><div class="choices" id="choices"></div>
         </div>
       </div>
-      <div class="controls"><div><span class="keys">Arrow keys / WASD</span> to walk. <span class="keys">E</span> or <span class="keys">SPACE</span> to talk. <button id="pause" type="button" aria-label="Pause or resume game">Pause</button> <button id="sound" type="button" aria-label="Toggle sound">Sound: on</button> <button id="contrast" type="button" aria-label="Toggle high contrast">High contrast</button></div><div class="touch"><button class="up" data-key="ArrowUp" aria-label="Move up">▲</button><button class="left" data-key="ArrowLeft" aria-label="Move left">◀</button><button class="down" data-key="ArrowDown" aria-label="Move down">▼</button><button class="right" data-key="ArrowRight" aria-label="Move right">▶</button></div></div>
+      <div class="controls"><div><span class="keys">Arrow keys / WASD</span> to walk. <span class="keys">E</span> or <span class="keys">SPACE</span> to talk. <button id="pause" type="button" aria-label="Pause or resume game">Pause</button> <button id="sound" type="button" aria-label="Toggle sound">Sound: on</button> <button id="contrast" type="button" aria-label="Toggle high contrast">High contrast</button></div><div class="touch"><button class="up" data-key="ArrowUp" aria-label="Move up">▲</button><button class="left" data-key="ArrowLeft" aria-label="Move left">◀</button><button class="down" data-key="ArrowDown" aria-label="Move down">▼</button><button class="right" data-key="ArrowRight" aria-label="Move right">▶</button><button class="interact" id="interact" type="button">Talk / use</button></div></div>
     </section>
   </main>
   <script>
@@ -81,7 +125,7 @@
     const relationships = { marketing:50, sales:50, success:50 };
     const choiceLog = [];
     const visited = new Set();
-    const objective = document.getElementById('objective'), counter = document.getElementById('counter'), revenueLabel = document.getElementById('revenue'), pauseButton = document.getElementById('pause'), soundButton = document.getElementById('sound'), contrastButton = document.getElementById('contrast'), startButton = document.getElementById('start');
+    const objective = document.getElementById('objective'), counter = document.getElementById('counter'), revenueLabel = document.getElementById('revenue'), pauseButton = document.getElementById('pause'), soundButton = document.getElementById('sound'), contrastButton = document.getElementById('contrast'), startButton = document.getElementById('start'), interactButton = document.getElementById('interact');
     const box = document.getElementById('dialogue'), speaker = document.getElementById('speaker'), line = document.getElementById('line'), choices = document.getElementById('choices'), intro = document.getElementById('intro');
     function roundedRect(x,y,w,h,r,fill,stroke='#000') { ctx.save();ctx.beginPath();ctx.roundRect(x+5,y+5,w,h,r);ctx.fillStyle='rgba(75,31,111,.14)';ctx.fill();ctx.restore();ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=stroke;ctx.stroke(); }
     function drawOffice() {
@@ -149,6 +193,7 @@
     function endGame(reason='The handoff was never handed off.'){ lossReason=reason;meetingMode=false;ending=true;box.hidden=true;beep('lose');unlock('Meeting Survivor',false);objective.textContent='Outcome: lost revenue'; }
     function restart(){ ending=false;won=false;conversations=0;decisionIndex=0;paused=false;meetingMode=false;revenue=74;steps=0;choiceLog.length=0;achievements.length=0;collected.clear();revenueHistory.length=0;revenueHistory.push(74);flags.sharedDefinition=false;flags.ownership=false;flags.handoff=false;relationships.marketing=50;relationships.sales=50;relationships.success=50;lossReason='The handoff was never handed off.';visited.clear();player.x=480;player.y=458;revenueLabel.textContent='Revenue: 74%';counter.textContent='0 / 3 conversations';objective.textContent='Objective: find the problem';pauseButton.textContent='Pause'; }
     function nearPhone(){ return Math.hypot(player.x-phone.x,player.y-phone.y)<62; }
+    function interact(){ if(ending||won||!started||paused||!box.hidden)return;if(nearPhone())showPhone();else if(nearCollectible())collect(nearCollectible());else {const r=nearRoom();if(r)showConversation(r);} }
     function move(){ if(!started||paused||ending||won||!box.hidden)return;let dx=0,dy=0;if(keys.has('ArrowLeft')||keys.has('a'))dx--;if(keys.has('ArrowRight')||keys.has('d'))dx++;if(keys.has('ArrowUp')||keys.has('w'))dy--;if(keys.has('ArrowDown')||keys.has('s'))dy++;if(dx||dy){const len=Math.hypot(dx,dy);if(dx)facing=dx<0?-1:1;steps++;player.x=Math.max(22,Math.min(W-22,player.x+dx/len*player.speed));player.y=Math.max(110,Math.min(H-35,player.y+dy/len*player.speed));} }
     function drawConfetti(){const colors=['#fff','#4b1f6f','#000','#f2c14e'];for(let i=0;i<28;i++){const x=(i*83+pulse*1.8)%W,y=(i*47+pulse*2.4)%H;ctx.fillStyle=colors[i%colors.length];ctx.save();ctx.translate(x,y);ctx.rotate((pulse+i)*.05);ctx.fillRect(-3,-7,6,14);ctx.restore();}}
     function drawRain(){ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=2;for(let i=0;i<24;i++){const x=(i*47+pulse*.8)%W,y=(i*31+pulse*1.5)%H;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-9,y+18);ctx.stroke();}}
@@ -157,9 +202,10 @@
     function startGame(){started=true;startedAt=Date.now();intro.hidden=true;beep();officeEvent('Walk to a department and press E to talk.');}
     startButton.addEventListener('click',()=>{clearSave();restart();startGame();});
     pauseButton.addEventListener('click',togglePause);soundButton.addEventListener('click',()=>{soundOn=!soundOn;localStorage.setItem('revenueSound',soundOn?'on':'off');soundButton.textContent=soundOn?'Sound: on':'Sound: off';if(soundOn)beep();});contrastButton.addEventListener('click',()=>{document.body.classList.toggle('high-contrast');contrastButton.textContent=document.body.classList.contains('high-contrast')?'Standard contrast':'High contrast';localStorage.setItem('revenueContrast',document.body.classList.contains('high-contrast')?'on':'off');});
-    window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key.toLowerCase()==='p'){togglePause();return;}if(e.key.toLowerCase()==='r'&&(ending||won)){restart();return;}if((e.key==='e'||e.key===' ')&&!ending&&!won&&started&&box.hidden&&!paused){if(nearPhone())showPhone();else if(nearCollectible())collect(nearCollectible());else {const r=nearRoom();if(r)showConversation(r);}}keys.add(e.key);});
-    window.addEventListener('keyup',e=>keys.delete(e.key)); canvas.addEventListener('click',()=>{if(ending||won)restart();else if(started&&box.hidden&&!paused){if(nearPhone())showPhone();else if(nearCollectible())collect(nearCollectible());else {const r=nearRoom();if(r)showConversation(r);}}});
-    document.querySelectorAll('.touch button').forEach(button=>{const key=button.dataset.key;button.addEventListener('pointerdown',event=>{event.preventDefault();button.setPointerCapture(event.pointerId);keys.add(key);});button.addEventListener('pointerup',event=>{event.preventDefault();keys.delete(key);button.releasePointerCapture(event.pointerId);});button.addEventListener('pointercancel',()=>keys.delete(key));button.addEventListener('lostpointercapture',()=>keys.delete(key));});
+    window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key.toLowerCase()==='p'){togglePause();return;}if(e.key.toLowerCase()==='r'&&(ending||won)){restart();return;}if(e.key==='e'||e.key===' '){interact();}keys.add(e.key);});
+    window.addEventListener('keyup',e=>keys.delete(e.key)); canvas.addEventListener('click',()=>{if(ending||won)restart();else interact();});
+    document.querySelectorAll('.touch button[data-key]').forEach(button=>{const key=button.dataset.key;button.addEventListener('pointerdown',event=>{event.preventDefault();button.setPointerCapture(event.pointerId);keys.add(key);});button.addEventListener('pointerup',event=>{event.preventDefault();keys.delete(key);button.releasePointerCapture(event.pointerId);});button.addEventListener('pointercancel',()=>keys.delete(key));button.addEventListener('lostpointercapture',()=>keys.delete(key));});
+    interactButton.addEventListener('click',interact);
     soundButton.textContent=soundOn?'Sound: on':'Sound: off';if(localStorage.getItem('revenueContrast')==='on'){document.body.classList.add('high-contrast');contrastButton.textContent='Standard contrast';}draw();
   </script>
 </body>
